@@ -6,7 +6,7 @@ const session = require("express-session");
 const passport = require("passport");
 const ObjectID = require("mongodb").ObjectID;
 const mongo = require("mongodb").MongoClient;
-const dbKey = process.env.DATABASE;
+const env = require("dotenv").config();
 
 const app = express();
 var pug = require("pug");
@@ -28,27 +28,24 @@ app.use(passport.initialize());
 app.use(passport.session());
 //-------------------------------
 
-//Q5 ---------------------
-mongo.connect(dbKey, (err, db) => {
+mongo.connect(process.env.DATABASE, { useUnifiedTopology: true }, (err, db) => {
   if (err) {
     console.log("Database error: " + err);
   } else {
     console.log("Successful database connection");
-    //Q4 -------------------------
-    passport.serializeUser((user, done) => {
-      done(null, user._id);
-    });
-
-    passport.deserializeUser((id, done) => {
-     //done(null, null); //--Q4
-      db.collection("users").findOne({ _id: new ObjectID(id) }, (err, doc) => {
-        done(null, doc);
-      });
-    });
-    //Q4 ----------------------
   }
+
+  passport.serializeUser((user, done) => {
+    done(null, user._id);
+  });
+  
+  passport.deserializeUser((id, done) => {
+    db.collection("users").findOne({ _id: new ObjectID(id) }, (err, doc) => {
+      done(null, doc);
+    });
+  });
 });
-//Q5 ------------------------------
+
 app.set("view engine", "pug"); //set view engine so pug files will change over to html
 app
   .route("/") // home page index Q1
