@@ -42,6 +42,8 @@ app.use(passport.session());
 //-------------------------------
 
 mongo.connect(process.env.DATABASE, { useUnifiedTopology: true }, (err, db) => {
+  var db = user.db('passportUsers');
+  
   if (err) {
     console.log("Database error: " + err);
   } else {
@@ -107,10 +109,47 @@ function ensureAuthenticated(req, res, next) {
   res.redirect('/');
 };
 
+//Q10----------------------------
+    app.route("/register").post(
+      (req, res, next) => {
+        let test = req.body.username;
+        console.log("user being passed = " + test);
+        db.collection("users").findOne(
+          { username: req.body.username },
+          function(err, user) {
+            if (err) {
+              next(err);
+            } else if (user) {
+              res.redirect("/");
+            } else {
+              db.collection("users").insertOne(
+                {
+                  username: req.body.username,
+                  password: req.body.password
+                },
+                (err, doc) => {
+                  if (err) {
+                    res.redirect("/");
+                  } else {
+                    next(null, user);
+                  }
+                }
+              );
+            }
+          }
+        );
+      },
+      passport.authenticate("local", { failureRedirect: "/" }),
+      (req, res, next) => { console.log(req.user);
+        res.redirect("/profile");
+      }
+    );
+
+
  app
  .route('/profile')
  .get(ensureAuthenticated, (req,res) => {
-    res.render(process.cwd() + '/views/pug/profile',);
+    res.render(process.cwd() + '/views/pug/profile', + { username: req.user.username });
  });
 
 //--------------------------
